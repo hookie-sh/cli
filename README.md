@@ -73,8 +73,17 @@ See `hookie --help` and subcommand `--help` for flags.
 ├── packages/
 │   ├── gui/         # Vite UI embedded in the CLI
 │   └── cli/         # @hookie-sh/cli npm wrapper
+├── .agents/skills/  # agent skills (tool-agnostic)
 └── Makefile
 ```
+
+## Releasing
+
+Maintainers cut releases from `main` by pushing a `v*` tag (triggers [Release CLI](https://github.com/hookie-sh/cli/actions/workflows/release.yml)).
+
+In Cursor, invoke **@create-release** to compute the next semver from conventional commits and push the tag after confirmation. The skill lives at `.agents/skills/create-release/SKILL.md` (symlinked from `.cursor/skills`).
+
+After CI stages the npm package, test with [hookie-sh/release-tester](https://github.com/hookie-sh/release-tester) before `npm stage approve`.
 
 ## License
 
