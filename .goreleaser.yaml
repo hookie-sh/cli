@@ -1,0 +1,57 @@
+# Build and release the Hookie CLI. Trigger: push tag v* (e.g. v0.0.1).
+# Requires CLERK_PUBLISHABLE_KEY in the environment (e.g. GitHub Actions secret).
+# The workflow must build packages/gui and copy dist to internal/gui/dist before running goreleaser.
+
+version: 2
+
+project_name: hookie
+
+changelog:
+  use: github
+  format: "{{ .Message }}{{ if .Logins }} ({{ .Logins | englishJoin }}){{ end }}"
+  sort: asc
+  abbrev: -1
+  groups:
+    - title: Features
+      regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
+      order: 0
+    - title: Bug fixes
+      regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
+      order: 1
+    - title: Others
+      order: 999
+
+builds:
+  - id: hookie
+    dir: .
+    main: .
+    binary: hookie
+    ldflags:
+      - -s -w
+      - -X github.com/hookie-sh/cli/cmd.Version=v{{ .Version }}
+      - -X github.com/hookie-sh/cli/internal/auth.PublishableKey={{ .Env.CLERK_PUBLISHABLE_KEY }}
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+
+archives:
+  - id: hookie
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+
+checksum:
+  name_template: checksums.txt
+
+release:
+  github:
+    owner: hookie-sh
+    name: cli

@@ -1,0 +1,22 @@
+{
+  "name": "hookie-cli",
+  "license": "Apache-2.0",
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "check-types": "turbo run check-types"
+  },
+  "devDependencies": {
+    "prettier": "^3.8.3",
+    "turbo": "^2.9.12",
+    "typescript": "^5.9.3"
+  },
+  "packageManager": "pnpm@11.1.0+sha512.0c44e842e5686b2c061a81adda8b2258bd8818e9704b2cf2c63d56b931a7b2e910092e085027003b96ca3911ab56a07f6df5abaed2be9925034cdd686a535b14",
+  "engines": {
+    "node": ">=24"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild"]
+  }
+}

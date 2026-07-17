@@ -1,0 +1,36 @@
+{
+  "name": "@hookie-sh/cli",
+  "version": "0.0.0",
+  "description": "Hookie CLI – install and run from npm",
+  "license": "Apache-2.0",
+  "publishConfig": {
+    "provenance": true,
+    "access": "public"
+  },
+  "keywords": [
+    "cli",
+    "hookie",
+    "webhooks"
+  ],
+  "files": [
+    "bin",
+    "scripts"
+  ],
+  "scripts": {
+    "postinstall": "node scripts/postinstall.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hookie-sh/cli.git"
+  },
+  "bin": {
+    "hookie": "bin/hookie.js"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.17",
+    "tar": "^7.5.15"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

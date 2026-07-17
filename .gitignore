@@ -1,0 +1,32 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Local env files
+.env
+.env*
+!.env.example
+
+# Turbo
+.turbo
+
+# Build outputs
+dist
+bin/hookie
+bin/hookie.exe
+packages/cli/bin/hookie
+packages/cli/bin/hookie.exe
+
+# Go
+*.exe
+*.test
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Misc
+.DS_Store
+*.pem

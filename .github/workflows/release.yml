@@ -1,0 +1,81 @@
+# Build and release the Hookie CLI on tag push (e.g. v0.0.1).
+# Publishes: GoReleaser artifacts to GitHub Release, then @hookie-sh/cli to npm.
+# Requires CLERK_PUBLISHABLE_KEY and NPM_AUTH_TOKEN in repo Actions secrets.
+name: Release CLI
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Release CLI
+    runs-on: ubuntu-latest
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
+      VERSION: ${{ github.ref_name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: "pnpm"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Build GUI (embedded in CLI)
+        run: |
+          pnpm --filter gui build
+          rm -rf internal/gui/dist
+          cp -r packages/gui/dist internal/gui/dist
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.25"
+          cache-dependency-path: go.sum
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: "~> v2"
+          args: release --clean
+        env:
+          CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set package version from tag
+        working-directory: packages/cli
+        run: |
+          VERSION="${VERSION#v}"
+          npm version "$VERSION" --no-git-tag-version --allow-same-version
+
+      - name: Publish @hookie-sh/cli to npm
+        working-directory: packages/cli
+        run: pnpm publish --no-git-checks --provenance
+
+      - name: Release summary
+        run: |
+          VERSION="${VERSION#v}"
+          echo "## Release $VERSION" >> $GITHUB_STEP_SUMMARY
+          echo "- Published @hookie-sh/cli@$VERSION" >> $GITHUB_STEP_SUMMARY
+          echo "- GitHub Release: https://github.com/hookie-sh/cli/releases/tag/${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
