@@ -78,7 +78,7 @@ jobs:
       - name: Build GUI (embedded in CLI)
         if: ${{ inputs.npm_only != true && steps.github_release.outputs.exists != 'true' }}
         run: |
-          cd packages/gui && pnpm exec vite build
+          (cd packages/gui && pnpm exec vite build)
           rm -rf internal/gui/dist
           cp -r packages/gui/dist internal/gui/dist
 
