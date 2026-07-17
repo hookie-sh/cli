@@ -71,7 +71,7 @@ jobs:
 
       - name: Publish @hookie-sh/cli to npm
         working-directory: packages/cli
-        run: pnpm publish --no-git-checks --provenance
+        run: npm publish --access public
 
       - name: Release summary
         run: |

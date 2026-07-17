@@ -1,10 +1,9 @@
 {
   "name": "@hookie-sh/cli",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Hookie CLI – install and run from npm",
   "license": "Apache-2.0",
   "publishConfig": {
-    "provenance": true,
     "access": "public"
   },
   "keywords": [
