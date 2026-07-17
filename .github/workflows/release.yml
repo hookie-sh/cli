@@ -1,4 +1,5 @@
 # Build and release the Hookie CLI on tag push (e.g. v0.0.1).
+# Runs Go tests first; GoReleaser and npm stage only proceed if tests pass.
 # Publishes: GoReleaser artifacts to GitHub Release, then stages @hookie-sh/cli on npm.
 # Requires CLERK_PUBLISHABLE_KEY in repo Actions secrets.
 #
@@ -38,8 +39,29 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  test:
+    name: Go tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.25"
+          cache-dependency-path: go.sum
+
+      - name: Run tests
+        run: make test
+
   release:
     name: Release CLI
+    needs: test
     runs-on: ubuntu-latest
     env:
       VERSION: ${{ inputs.tag || github.ref_name }}
