@@ -128,7 +128,7 @@ func runAnonymousListen(endpointURL *url.URL, guiURL *url.URL, loggedIn bool) er
 	if loggedIn {
 		fmt.Println(color.YellowString("💡 Tip: Use --source-id or --app-id (or hookie.yml) to stream your registered sources instead of this ephemeral channel"))
 	} else {
-		fmt.Println(color.YellowString("💡 Tip: Sign up at https://hookie.sh to create permanent channels"))
+		fmt.Println(color.YellowString("💡 Tip: Sign up at https://app.hookie.sh to create permanent channels"))
 	}
 	fmt.Println()
 

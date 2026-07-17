@@ -10,4 +10,4 @@ var PublishableKey = ""
 
 // WebAppURL is the web application URL for PRODUCTION
 // Set this to your production web app URL (e.g., https://your-domain.com)
-var WebAppURL = "https://hookie.sh" // Set your production web app URL here
+var WebAppURL = "https://app.hookie.sh"

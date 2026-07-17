@@ -24,10 +24,10 @@ func GetPublishableKey() string {
 
 // GetWebAppURL returns the web application URL for CLI authentication
 // URL is loaded from oauth_config_dev.go (with -tags dev) or oauth_config_prod.go (default)
-// Can be overridden by HOOKIE_WEB_APP_URL environment variable
+// Can be overridden by HOOKIE_APP_URL environment variable
 func GetWebAppURL() string {
 	url := WebAppURL
-	if envURL := getEnvOrDefault("HOOKIE_WEB_APP_URL", ""); envURL != "" {
+	if envURL := getEnvOrDefault("HOOKIE_APP_URL", ""); envURL != "" {
 		url = envURL
 	}
 	return url

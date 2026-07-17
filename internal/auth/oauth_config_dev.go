@@ -9,5 +9,5 @@ package auth
 var PublishableKey = ""
 
 // WebAppURL is the web application URL for DEVELOPMENT
-var WebAppURL = "http://localhost:3000"
+var WebAppURL = "http://localhost:3001"
 

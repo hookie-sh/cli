@@ -30,7 +30,7 @@ var loginCmd = &cobra.Command{
 		// Get web app URL
 		webAppURL := auth.GetWebAppURL()
 		if webAppURL == "" {
-			return fmt.Errorf("web app URL not configured. set HOOKIE_WEB_APP_URL or use an official build from https://github.com/hookie-sh/hookie/releases")
+			return fmt.Errorf("web app URL not configured. set HOOKIE_APP_URL or use an official build from https://github.com/hookie-sh/hookie/releases")
 		}
 
 		// Step 1: Find an available port for the callback server

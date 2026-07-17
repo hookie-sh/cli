@@ -1,7 +1,7 @@
 .PHONY: proto build-gui build-cli build-cli-dev build-cli-prod ensure-cli-gui-dist test deps
 
 CLI_ENV_PREFIX = if [ -f .env ]; then set -a; . ./.env; set +a; fi; if [ -n "$$CLERK_PUBLISHABLE_KEY" ] && [ -z "$$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" ]; then export NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="$$CLERK_PUBLISHABLE_KEY"; fi;
-CLI_DEV_LDFLAGS = -X github.com/hookie-sh/cli/internal/auth.PublishableKey=$$CLERK_PUBLISHABLE_KEY -X github.com/hookie-sh/cli/internal/auth.WebAppURL=$${HOOKIE_WEB_APP_URL:-https://hookie.sh}
+CLI_DEV_LDFLAGS = -X github.com/hookie-sh/cli/internal/auth.PublishableKey=$$CLERK_PUBLISHABLE_KEY -X github.com/hookie-sh/cli/internal/auth.WebAppURL=$${HOOKIE_APP_URL:-https://app.hookie.sh}
 
 proto:
 	protoc --go_out=. --go_opt=paths=source_relative \
