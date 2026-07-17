@@ -1,7 +1,11 @@
 # Build and release the Hookie CLI on tag push (e.g. v0.0.1).
 # Publishes: GoReleaser artifacts to GitHub Release, then @hookie-sh/cli to npm.
 # Requires CLERK_PUBLISHABLE_KEY and NPM_TOKEN in repo Actions secrets.
-# After the first @hookie-sh/cli publish, switch NODE_AUTH_TOKEN to OIDC trusted publishing.
+#
+# Idempotent retries:
+# - Re-run a failed workflow on the same tag: skips GoReleaser if the GitHub
+#   release already exists; skips npm publish if the version is already on npm.
+# - Manual npm-only retry: Actions → Release CLI → Run workflow → tag + npm_only.
 name: Release CLI
 
 on:
@@ -11,11 +15,11 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release tag (e.g. v0.0.1). Required for npm-only retry."
+        description: "Release tag (e.g. v0.0.1). Required for manual runs."
         required: true
         type: string
       npm_only:
-        description: "Skip GoReleaser; publish npm only (retry after a failed publish)"
+        description: "Skip GoReleaser; publish npm only (GitHub release must already exist)"
         required: false
         type: boolean
         default: false
@@ -42,6 +46,18 @@ jobs:
           fetch-depth: 0
           ref: ${{ inputs.tag || github.ref }}
 
+      - name: Check if GitHub release already exists
+        id: github_release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view "$VERSION" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "GitHub release $VERSION already exists; skipping GoReleaser."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Set up pnpm
         uses: pnpm/action-setup@v5
 
@@ -56,21 +72,21 @@ jobs:
         run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Build GUI (embedded in CLI)
-        if: ${{ !inputs.npm_only }}
+        if: ${{ inputs.npm_only != true && steps.github_release.outputs.exists != 'true' }}
         run: |
-          pnpm --filter gui build
+          cd packages/gui && pnpm exec vite build
           rm -rf internal/gui/dist
           cp -r packages/gui/dist internal/gui/dist
 
       - name: Set up Go
-        if: ${{ !inputs.npm_only }}
+        if: ${{ inputs.npm_only != true && steps.github_release.outputs.exists != 'true' }}
         uses: actions/setup-go@v6
         with:
           go-version: "1.25"
           cache-dependency-path: go.sum
 
       - name: Run GoReleaser
-        if: ${{ !inputs.npm_only }}
+        if: ${{ inputs.npm_only != true && steps.github_release.outputs.exists != 'true' }}
         uses: goreleaser/goreleaser-action@v6
         with:
           version: "~> v2"
@@ -87,11 +103,21 @@ jobs:
 
       - name: Publish @hookie-sh/cli to npm
         working-directory: packages/cli
-        run: npm publish --access public
+        run: |
+          VERSION="${VERSION#v}"
+          if npm view "@hookie-sh/cli@${VERSION}" version >/dev/null 2>&1; then
+            echo "Already published @hookie-sh/cli@${VERSION}; skipping npm publish."
+            exit 0
+          fi
+          npm publish --access public
 
       - name: Release summary
         run: |
           VERSION="${VERSION#v}"
-          echo "## Release $VERSION" >> $GITHUB_STEP_SUMMARY
-          echo "- Published @hookie-sh/cli@$VERSION" >> $GITHUB_STEP_SUMMARY
-          echo "- GitHub Release: https://github.com/hookie-sh/cli/releases/tag/v${VERSION}" >> $GITHUB_STEP_SUMMARY
+          echo "## Release v${VERSION}" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.github_release.outputs.exists }}" = "true" ]; then
+            echo "- GitHub Release: already existed (GoReleaser skipped)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- GitHub Release: https://github.com/hookie-sh/cli/releases/tag/v${VERSION}" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "- npm: \`@hookie-sh/cli@${VERSION}\`" >> $GITHUB_STEP_SUMMARY
