@@ -18,10 +18,10 @@ Requires Node.js 18+ for the npm wrapper (which downloads the native binary). Su
 ```bash
 hookie login
 hookie apps
-hookie listen --app-id <app-id>
+hookie listen --app-id billing-api-k7m2xp
 ```
 
-Run `hookie listen` with no app or source for a quick anonymous ephemeral webhook URL.
+Run `hookie listen` with no app or source for a quick anonymous ephemeral webhook URL (`/a/brave-falcon-k7m2xp`).
 
 ## Environment variables
 
@@ -40,9 +40,9 @@ hookie login
 hookie logout
 hookie apps
 hookie sources
-hookie listen --app-id <app-id>
-hookie listen --source-id <source-id>
-hookie listen --forward <url>
+hookie listen --app-id <app-public-id>
+hookie listen --app-id <app-public-id> --source-id <source-slug>
+hookie listen --forward-to <url>
 hookie init
 ```
 

@@ -90,9 +90,9 @@ func SaveRepoConfig(config *RepoConfig, filePath string) error {
 
 // validateRepoConfig validates the repository configuration
 func validateRepoConfig(config *RepoConfig) error {
-	// Check that app_id and source_id are mutually exclusive
-	if config.AppID != "" && config.SourceID != "" {
-		return fmt.Errorf("cannot specify both app_id and source_id")
+	// source_id (slug) requires app_id (public id)
+	if config.SourceID != "" && config.AppID == "" {
+		return fmt.Errorf("source_id requires app_id")
 	}
 
 	// Validate forward URL if provided

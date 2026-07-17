@@ -48,15 +48,19 @@ var appsCmd = &cobra.Command{
 		}
 
 		table := tablewriter.NewWriter(os.Stdout)
-		table.Header("ID", "NAME", "SOURCES", "DESCRIPTION")
+		table.Header("PUBLIC ID", "NAME", "SOURCES", "DESCRIPTION")
 
 		for _, app := range applications {
 			desc := app.Description
 			if len(desc) > 50 {
 				desc = desc[:47] + "..."
 			}
+			publicID := app.PublicId
+			if publicID == "" {
+				publicID = app.Id
+			}
 			table.Append(
-				color.CyanString(app.Id),
+				color.CyanString(publicID),
 				app.Name,
 				fmt.Sprintf("%d", app.SourceCount),
 				desc,

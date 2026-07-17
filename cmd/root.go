@@ -13,6 +13,7 @@ import (
 	"github.com/hookie-sh/cli/internal/gui"
 	"github.com/hookie-sh/cli/internal/relay"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 var (
@@ -52,12 +53,12 @@ func Execute() {
 }
 
 var listenCmd = &cobra.Command{
-	Use:   "listen [--forward <url>]",
+	Use:   "listen [--forward-to <url>]",
 	Short: "Listen for webhook events (anonymous or authenticated)",
-	Long:  `Listen for webhook events. Without --app-id or --source-id (and no app/source in hookie.yml), creates an anonymous ephemeral channel—even when logged in. Use --app-id to subscribe to all sources of an app, or --source-id for a specific source. Optionally forward events with --forward.`,
+	Long:  `Listen for webhook events. Without --app-id (and no app in hookie.yml), creates an anonymous ephemeral channel—even when logged in. Use --app-id to subscribe to all sources of an app, or add --source-id for a single source slug. Optionally forward events with --forward-to.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		forwardURL, _ := cmd.Flags().GetString("forward")
-		forwardExplicit := cmd.Flags().Changed("forward")
+		forwardURL, _ := cmd.Flags().GetString("forward-to")
+		forwardExplicit := cmd.Flags().Changed("forward-to")
 		showUI, _ := cmd.Flags().GetBool("ui")
 		showGUI := !forwardExplicit || showUI
 		sourceID, _ := cmd.Flags().GetString("source-id")
@@ -80,7 +81,10 @@ var listenCmd = &cobra.Command{
 		if cliAppID == "" && cliSourceID == "" && repoConfig != nil && repoConfig.AppID != "" {
 			appID = repoConfig.AppID
 		}
-		if cliSourceID == "" && cliAppID == "" && repoConfig != nil && repoConfig.SourceID != "" {
+		if cliSourceID == "" && repoConfig != nil && repoConfig.SourceID != "" {
+			if appID == "" && repoConfig.AppID != "" {
+				appID = repoConfig.AppID
+			}
 			sourceID = repoConfig.SourceID
 		}
 		if forwardURL == "" && repoConfig != nil && repoConfig.Forward != "" {
@@ -105,9 +109,9 @@ var listenCmd = &cobra.Command{
 			}
 		}
 
-		// Validate flags - source-id and app-id are mutually exclusive
-		if sourceID != "" && appID != "" {
-			return fmt.Errorf("cannot specify both --source-id and --app-id flags")
+		// source-id (slug) requires app-id (public id)
+		if sourceID != "" && appID == "" {
+			return fmt.Errorf("--source-id requires --app-id (application public id)")
 		}
 
 		// Parse and validate endpoint URL if provided
@@ -133,7 +137,7 @@ var listenCmd = &cobra.Command{
 			return err
 		}
 
-		// Start GUI when: no --forward, or --forward + --ui
+		// Start GUI when: no --forward-to, or --forward-to + --ui
 		var guiURL *url.URL
 		if showGUI {
 			port := gui.DefaultPort()
@@ -167,7 +171,7 @@ var listenCmd = &cobra.Command{
 
 		effectiveOrgID := orgID
 		if sourceID != "" {
-			return runListen(sourceID, "", effectiveOrgID, endpointURL, sourceForwardMap, guiURL)
+			return runListen(sourceID, appID, effectiveOrgID, endpointURL, sourceForwardMap, guiURL)
 		}
 		return runListen("", appID, effectiveOrgID, endpointURL, sourceForwardMap, guiURL)
 	},
@@ -235,8 +239,14 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&orgID, "org-id", "", "Organization ID (can be set globally or per command)")
 	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "Show detailed information (headers, query params, body, etc.)")
 	rootCmd.PersistentFlags().BoolP("version", "v", false, "Display version")
-	listenCmd.Flags().StringP("forward", "f", "", "Forward events to the specified endpoint URL")
-	listenCmd.Flags().Bool("ui", false, "Show local UI when forwarding with --forward")
+	listenCmd.Flags().SetNormalizeFunc(func(_ *pflag.FlagSet, name string) pflag.NormalizedName {
+		if name == "forward" {
+			return pflag.NormalizedName("forward-to")
+		}
+		return pflag.NormalizedName(name)
+	})
+	listenCmd.Flags().StringP("forward-to", "f", "", "Forward events to the specified endpoint URL")
+	listenCmd.Flags().Bool("ui", false, "Show local UI when forwarding with --forward-to")
 	listenCmd.Flags().StringP("source-id", "s", "", "Subscribe to a specific source")
 	listenCmd.Flags().StringP("app-id", "a", "", "Subscribe to all sources of an application")
 	rootCmd.AddCommand(listenCmd)

@@ -54,11 +54,10 @@ var sourcesCmd = &cobra.Command{
 
 		table := tablewriter.NewWriter(os.Stdout)
 
-		// Include APP ID column when listing all sources (appID is empty)
 		if appID == "" {
-			table.Header("ID", "APP ID", "NAME", "DESCRIPTION")
+			table.Header("SLUG", "APP ID", "NAME", "DESCRIPTION")
 		} else {
-			table.Header("ID", "NAME", "DESCRIPTION")
+			table.Header("SLUG", "NAME", "DESCRIPTION")
 		}
 
 		for _, source := range sources {
@@ -66,17 +65,21 @@ var sourcesCmd = &cobra.Command{
 			if len(desc) > 50 {
 				desc = desc[:47] + "..."
 			}
+			slug := source.Slug
+			if slug == "" {
+				slug = source.Id
+			}
 
 			if appID == "" {
 				table.Append(
-					color.CyanString(source.Id),
+					color.CyanString(slug),
 					color.YellowString(source.ApplicationId),
 					source.Name,
 					desc,
 				)
 			} else {
 				table.Append(
-					color.CyanString(source.Id),
+					color.CyanString(slug),
 					source.Name,
 					desc,
 				)

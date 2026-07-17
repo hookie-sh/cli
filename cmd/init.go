@@ -88,12 +88,16 @@ var initCmd = &cobra.Command{
 
 		for _, app := range applications {
 			displayName := app.Name
+			publicID := app.PublicId
+			if publicID == "" {
+				publicID = app.Id
+			}
 			if displayName == "" {
-				displayName = app.Id
+				displayName = publicID
 			}
 			options = append(options, huh.NewOption(
-				fmt.Sprintf("%s (%s)", displayName, app.Id),
-				app.Id,
+				fmt.Sprintf("%s (%s)", displayName, publicID),
+				publicID,
 			))
 		}
 

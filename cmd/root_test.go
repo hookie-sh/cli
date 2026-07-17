@@ -36,19 +36,20 @@ func TestResolveListenAuthentication(t *testing.T) {
 			wantAuth: false,
 		},
 		{
-			name:     "source listen requires login",
-			sourceID: "source_123",
+			name:     "source listen requires login and app id",
+			sourceID: "stripe",
 			wantErr:  true,
 		},
 		{
 			name:    "app listen requires login",
-			appID:   "app_123",
+			appID:   "billing-api-k7m2xp",
 			wantErr: true,
 		},
 		{
 			name:     "authenticated targeted listen allowed",
 			token:    "jwt-token",
-			sourceID: "source_123",
+			appID:    "billing-api-k7m2xp",
+			sourceID: "stripe",
 			wantAuth: true,
 		},
 		{

@@ -354,6 +354,7 @@ type Application struct {
 	CreatedAt     int64                  `protobuf:"varint,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt     int64                  `protobuf:"varint,5,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	SourceCount   int32                  `protobuf:"varint,6,opt,name=source_count,json=sourceCount,proto3" json:"source_count,omitempty"`
+	PublicId      string                 `protobuf:"bytes,7,opt,name=public_id,json=publicId,proto3" json:"public_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -428,6 +429,13 @@ func (x *Application) GetSourceCount() int32 {
 		return x.SourceCount
 	}
 	return 0
+}
+
+func (x *Application) GetPublicId() string {
+	if x != nil {
+		return x.PublicId
+	}
+	return ""
 }
 
 // Request to list sources
@@ -530,6 +538,7 @@ type Source struct {
 	CreatedAt     int64                  `protobuf:"varint,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt     int64                  `protobuf:"varint,5,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	ApplicationId string                 `protobuf:"bytes,6,opt,name=application_id,json=applicationId,proto3" json:"application_id,omitempty"`
+	Slug          string                 `protobuf:"bytes,7,opt,name=slug,proto3" json:"slug,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -606,6 +615,13 @@ func (x *Source) GetApplicationId() string {
 	return ""
 }
 
+func (x *Source) GetSlug() string {
+	if x != nil {
+		return x.Slug
+	}
+	return ""
+}
+
 // Request to create an anonymous ephemeral channel
 type CreateAnonymousChannelRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -647,7 +663,7 @@ func (*CreateAnonymousChannelRequest) Descriptor() ([]byte, []int) {
 type CreateAnonymousChannelResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ChannelId     string                 `protobuf:"bytes,1,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
-	WebhookUrl    string                 `protobuf:"bytes,2,opt,name=webhook_url,json=webhookUrl,proto3" json:"webhook_url,omitempty"` // e.g. "https://ingest.hookie.sh/anon/anon_xxx"
+	WebhookUrl    string                 `protobuf:"bytes,2,opt,name=webhook_url,json=webhookUrl,proto3" json:"webhook_url,omitempty"` // e.g. "https://ingest.hookie.sh/a/brave-falcon-k7m2xp"
 	ExpiresAt     int64                  `protobuf:"varint,3,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`   // Unix timestamp (seconds)
 	Limits        *AnonymousLimits       `protobuf:"bytes,4,opt,name=limits,proto3" json:"limits,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1007,7 +1023,7 @@ const file_proto_relay_proto_rawDesc = "" +
 	"\x17ListApplicationsRequest\x12\x15\n" +
 	"\x06org_id\x18\x01 \x01(\tR\x05orgId\"R\n" +
 	"\x18ListApplicationsResponse\x126\n" +
-	"\fapplications\x18\x01 \x03(\v2\x12.relay.ApplicationR\fapplications\"\xb4\x01\n" +
+	"\fapplications\x18\x01 \x03(\v2\x12.relay.ApplicationR\fapplications\"\xd1\x01\n" +
 	"\vApplication\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
@@ -1016,11 +1032,12 @@ const file_proto_relay_proto_rawDesc = "" +
 	"created_at\x18\x04 \x01(\x03R\tcreatedAt\x12\x1d\n" +
 	"\n" +
 	"updated_at\x18\x05 \x01(\x03R\tupdatedAt\x12!\n" +
-	"\fsource_count\x18\x06 \x01(\x05R\vsourceCount\"+\n" +
+	"\fsource_count\x18\x06 \x01(\x05R\vsourceCount\x12\x1b\n" +
+	"\tpublic_id\x18\a \x01(\tR\bpublicId\"+\n" +
 	"\x12ListSourcesRequest\x12\x15\n" +
 	"\x06app_id\x18\x01 \x01(\tR\x05appId\">\n" +
 	"\x13ListSourcesResponse\x12'\n" +
-	"\asources\x18\x01 \x03(\v2\r.relay.SourceR\asources\"\xb3\x01\n" +
+	"\asources\x18\x01 \x03(\v2\r.relay.SourceR\asources\"\xc7\x01\n" +
 	"\x06Source\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
@@ -1029,7 +1046,8 @@ const file_proto_relay_proto_rawDesc = "" +
 	"created_at\x18\x04 \x01(\x03R\tcreatedAt\x12\x1d\n" +
 	"\n" +
 	"updated_at\x18\x05 \x01(\x03R\tupdatedAt\x12%\n" +
-	"\x0eapplication_id\x18\x06 \x01(\tR\rapplicationId\"\x1f\n" +
+	"\x0eapplication_id\x18\x06 \x01(\tR\rapplicationId\x12\x12\n" +
+	"\x04slug\x18\a \x01(\tR\x04slug\"\x1f\n" +
 	"\x1dCreateAnonymousChannelRequest\"\xaf\x01\n" +
 	"\x1eCreateAnonymousChannelResponse\x12\x1d\n" +
 	"\n" +

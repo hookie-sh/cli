@@ -106,6 +106,7 @@ message Application {
   int64 created_at = 4;
   int64 updated_at = 5;
   int32 source_count = 6;
+  string public_id = 7;
 }
 
 // Request to list sources
@@ -127,6 +128,7 @@ message Source {
   int64 created_at = 4;
   int64 updated_at = 5;
   string application_id = 6;
+  string slug = 7;
 }
 
 // Request to create an anonymous ephemeral channel
@@ -137,7 +139,7 @@ message CreateAnonymousChannelRequest {
 // Response with anonymous channel information
 message CreateAnonymousChannelResponse {
   string channel_id = 1;
-  string webhook_url = 2;           // e.g. "https://ingest.hookie.sh/anon/anon_xxx"
+  string webhook_url = 2;           // e.g. "https://ingest.hookie.sh/a/brave-falcon-k7m2xp"
   int64 expires_at = 3;             // Unix timestamp (seconds)
   AnonymousLimits limits = 4;
 }
