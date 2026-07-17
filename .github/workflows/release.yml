@@ -1,10 +1,15 @@
 # Build and release the Hookie CLI on tag push (e.g. v0.0.1).
-# Publishes: GoReleaser artifacts to GitHub Release, then @hookie-sh/cli to npm.
-# Requires CLERK_PUBLISHABLE_KEY and NPM_TOKEN in repo Actions secrets.
+# Publishes: GoReleaser artifacts to GitHub Release, then stages @hookie-sh/cli on npm.
+# Requires CLERK_PUBLISHABLE_KEY in repo Actions secrets.
+#
+# npm uses trusted publishing (OIDC) + staged publish — no NPM_TOKEN. Configure on
+# npmjs.com: trusted publisher for hookie-sh/cli + release.yml (npm stage publish only),
+# and publishing access "require 2FA and disallow tokens". A maintainer must approve
+# staged versions: npm stage approve @hookie-sh/cli@X.Y.Z (or npmjs.com → Staged Packages).
 #
 # Idempotent retries:
 # - Re-run a failed workflow on the same tag: skips GoReleaser if the GitHub
-#   release already exists; skips npm publish if the version is already on npm.
+#   release already exists; skips npm stage if the version is published or already staged.
 # - Manual npm-only retry: Actions → Release CLI → Run workflow → tag + npm_only.
 name: Release CLI
 
@@ -19,7 +24,7 @@ on:
         required: true
         type: string
       npm_only:
-        description: "Skip GoReleaser; publish npm only (GitHub release must already exist)"
+        description: "Skip GoReleaser; stage npm only (GitHub release must already exist)"
         required: false
         type: boolean
         default: false
@@ -37,7 +42,6 @@ jobs:
     name: Release CLI
     runs-on: ubuntu-latest
     env:
-      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       VERSION: ${{ inputs.tag || github.ref_name }}
     steps:
       - name: Checkout
@@ -101,23 +105,58 @@ jobs:
           VERSION="${VERSION#v}"
           npm version "$VERSION" --no-git-tag-version --allow-same-version
 
-      - name: Publish @hookie-sh/cli to npm
+      - name: Ensure npm supports staged publishing
+        run: |
+          NPM_MAJOR="$(npm -v | cut -d. -f1)"
+          NPM_MINOR="$(npm -v | cut -d. -f2)"
+          if [ "$NPM_MAJOR" -lt 11 ] || { [ "$NPM_MAJOR" -eq 11 ] && [ "$NPM_MINOR" -lt 15 ]; }; then
+            echo "npm $(npm -v) is too old; staged publishing requires npm 11.15.0+"
+            exit 1
+          fi
+
+      - name: Stage @hookie-sh/cli on npm
         working-directory: packages/cli
         run: |
           VERSION="${VERSION#v}"
-          if npm view "@hookie-sh/cli@${VERSION}" version >/dev/null 2>&1; then
-            echo "Already published @hookie-sh/cli@${VERSION}; skipping npm publish."
+          PKG="@hookie-sh/cli@${VERSION}"
+
+          if npm view "$PKG" version >/dev/null 2>&1; then
+            echo "Already published $PKG; skipping npm stage publish."
             exit 0
           fi
-          npm publish --access public
+
+          if npm stage view "$PKG" >/dev/null 2>&1; then
+            echo "Already staged $PKG; approve with: npm stage approve $PKG"
+            exit 0
+          fi
+
+          set +e
+          npm stage publish --access public 2>&1 | tee /tmp/npm-stage.log
+          STATUS="${PIPESTATUS[0]}"
+          set -e
+
+          if [ "$STATUS" -ne 0 ]; then
+            if grep -qiE 'already staged|EEXIST|cannot stage' /tmp/npm-stage.log; then
+              echo "Version already staged; approve with: npm stage approve $PKG"
+              exit 0
+            fi
+            exit "$STATUS"
+          fi
+
+          echo "Staged $PKG. Maintainer must approve with 2FA before it is installable."
 
       - name: Release summary
         run: |
           VERSION="${VERSION#v}"
+          PKG="@hookie-sh/cli@${VERSION}"
           echo "## Release v${VERSION}" >> $GITHUB_STEP_SUMMARY
           if [ "${{ steps.github_release.outputs.exists }}" = "true" ]; then
             echo "- GitHub Release: already existed (GoReleaser skipped)" >> $GITHUB_STEP_SUMMARY
           else
             echo "- GitHub Release: https://github.com/hookie-sh/cli/releases/tag/v${VERSION}" >> $GITHUB_STEP_SUMMARY
           fi
-          echo "- npm: \`@hookie-sh/cli@${VERSION}\`" >> $GITHUB_STEP_SUMMARY
+          if npm view "$PKG" version >/dev/null 2>&1; then
+            echo "- npm: \`$PKG\` (published)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- npm: \`$PKG\` staged — approve with \`npm stage approve $PKG\` or npmjs.com → Staged Packages" >> $GITHUB_STEP_SUMMARY
+          fi
