@@ -114,8 +114,18 @@ function EventDetailPanel({ event }: EventDetailPanelProps) {
             <Clock className="h-3.5 w-3.5" />
             {new Date(event.timestamp).toLocaleString()}
           </span>
-          {event.appId && <span>{event.appId}</span>}
-          {event.sourceId && <span>{event.sourceId}</span>}
+          {event.appId && (
+            <span>
+              <span className="font-medium text-foreground">App:</span>{" "}
+              <span className="font-mono">{event.appId}</span>
+            </span>
+          )}
+          {event.sourceId && (
+            <span>
+              <span className="font-medium text-foreground">Source:</span>{" "}
+              <span className="font-mono">{event.sourceId}</span>
+            </span>
+          )}
         </div>
       </div>
 
@@ -257,11 +267,14 @@ function EventList() {
 
   return (
     <div className="flex flex-1 min-h-0">
-      <aside className="w-80 min-w-[280px] flex flex-col border-r border-border bg-card/50 shrink-0">
+      <aside className="w-80 min-w-[280px] min-h-0 flex flex-col border-r border-border bg-card/50 shrink-0">
         <div className="p-4 border-b border-border">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <span className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Events
+              <span className="tabular-nums text-foreground">
+                ({events.length})
+              </span>
             </span>
             <div className="flex items-center gap-2">
               {live && (
@@ -327,27 +340,25 @@ function EventList() {
                     type="button"
                     onClick={() => setSelectedEvent(event)}
                     className={[
-                      "w-full text-left px-4 py-3 flex flex-col gap-1.5 transition-colors",
+                      "w-full cursor-pointer px-4 py-3 flex items-center gap-2 text-left transition-colors",
                       "border-l-2 -mt-px first:mt-0",
                       isSelected
                         ? "bg-muted/30 border-l-primary"
                         : "border-l-transparent hover:bg-muted/20",
                     ].join(" ")}
                   >
-                    <span className="font-mono text-sm text-foreground truncate">
+                    <Badge
+                      variant={style.variant}
+                      className={`shrink-0 font-mono px-2 py-0.5 text-[10px] rounded ${style.className ?? ""}`}
+                    >
+                      {event.method}
+                    </Badge>
+                    <span className="min-w-0 flex-1 truncate font-mono text-sm text-foreground">
                       {event.path}
                     </span>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Badge
-                        variant={style.variant}
-                        className={`font-mono px-2 py-0.5 text-[10px] rounded ${style.className ?? ""}`}
-                      >
-                        {event.method}
-                      </Badge>
-                      <span className="tabular-nums">
-                        {new Date(event.timestamp).toLocaleTimeString()}
-                      </span>
-                    </div>
+                    <span className="shrink-0 tabular-nums text-xs text-muted-foreground">
+                      {new Date(event.timestamp).toLocaleTimeString()}
+                    </span>
                   </button>
                 );
               })}
@@ -365,7 +376,7 @@ function EventList() {
 
 export function App() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="h-dvh max-h-dvh overflow-hidden flex flex-col">
       <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-muted/20" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,oklch(0.6171_0.1375_39.0427/0.08),transparent_50%)]" />
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808006_1px,transparent_1px),linear-gradient(to_bottom,#80808006_1px,transparent_1px)] bg-[size:24px_24px]" />

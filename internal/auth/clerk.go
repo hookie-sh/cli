@@ -30,7 +30,7 @@ func init() {
 	if err != nil {
 		// Fallback: try to create a new pool and add common macOS cert locations
 		systemCerts = x509.NewCertPool()
-		
+
 		// On macOS, try to load certificates from common locations
 		if runtime.GOOS == "darwin" {
 			// Try common macOS certificate locations
@@ -131,7 +131,7 @@ func DumpTokenPayload(token string) {
 func VerifyToken(ctx context.Context, token string) (string, error) {
 	publishableKey := GetPublishableKey()
 	if publishableKey == "" {
-		return "", fmt.Errorf("clerk publishable key not configured: set CLERK_PUBLISHABLE_KEY or use an official build from https://github.com/hookie-sh/hookie/releases")
+		return "", fmt.Errorf("clerk publishable key not configured: set CLERK_PUBLISHABLE_KEY or use an official build from https://github.com/hookie-sh/cli/releases")
 	}
 	return verifyTokenJWT(ctx, token, publishableKey)
 }
@@ -147,7 +147,7 @@ type UserInfo struct {
 func GetUserInfoFromToken(ctx context.Context, token string) (*UserInfo, error) {
 	publishableKey := GetPublishableKey()
 	if publishableKey == "" {
-		return nil, fmt.Errorf("clerk publishable key not configured: set CLERK_PUBLISHABLE_KEY or use an official build from https://github.com/hookie-sh/hookie/releases")
+		return nil, fmt.Errorf("clerk publishable key not configured: set CLERK_PUBLISHABLE_KEY or use an official build from https://github.com/hookie-sh/cli/releases")
 	}
 
 	// Extract token from "Bearer <token>" format if present
@@ -315,32 +315,32 @@ func verifyTokenJWT(ctx context.Context, token, publishableKey string) (string, 
 
 	// Step 3: Build JWKS URL (public endpoint, no authentication needed)
 	jwksURL := fmt.Sprintf("https://%s/.well-known/jwks.json", instance)
-	
+
 	// Step 4: Fetch JWKS from public endpoint
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, jwksURL, nil)
 	if err != nil {
 		return "", fmt.Errorf("failed to create JWKS request: %w", err)
 	}
-	
+
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("failed to fetch JWKS: %w", err)
 	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 		return "", fmt.Errorf("JWKS request failed with status %d: %s", resp.StatusCode, string(body))
 	}
-	
+
 	var jwksResponse struct {
 		Keys []map[string]interface{} `json:"keys"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&jwksResponse); err != nil {
 		return "", fmt.Errorf("failed to decode JWKS response: %w", err)
 	}
-	
+
 	// Step 5: Find the JWK matching the key ID
 	var jwkJSON []byte
 	for _, key := range jwksResponse.Keys {
@@ -353,17 +353,17 @@ func verifyTokenJWT(ctx context.Context, token, publishableKey string) (string, 
 			break
 		}
 	}
-	
+
 	if jwkJSON == nil {
 		return "", fmt.Errorf("JWK not found for key ID: %s", unsafeClaims.KeyID)
 	}
-	
+
 	// Step 6: Parse the JWK into Clerk's JSONWebKey type
 	var jwk clerk.JSONWebKey
 	if err := json.Unmarshal(jwkJSON, &jwk); err != nil {
 		return "", fmt.Errorf("failed to parse JWK: %w", err)
 	}
-	
+
 	// Step 7: Verify the session token using the JWK
 	claims, err := jwt.Verify(ctx, &jwt.VerifyParams{
 		Token: token,
@@ -624,7 +624,7 @@ func CompleteSignInWithTicket(ctx context.Context, signInToken string) (string, 
 	// Get publishable key to determine Clerk instance
 	publishableKey := GetPublishableKey()
 	if publishableKey == "" {
-		return "", fmt.Errorf("clerk publishable key not configured: set CLERK_PUBLISHABLE_KEY or use an official build from https://github.com/hookie-sh/hookie/releases")
+		return "", fmt.Errorf("clerk publishable key not configured: set CLERK_PUBLISHABLE_KEY or use an official build from https://github.com/hookie-sh/cli/releases")
 	}
 
 	// Extract Clerk instance from publishable key
@@ -639,18 +639,18 @@ func CompleteSignInWithTicket(ctx context.Context, signInToken string) (string, 
 
 	// Build the API URL
 	apiURL := fmt.Sprintf("https://%s/v1/client/sign_ins", instance)
-	
+
 	// Prepare form-encoded data
 	data := url.Values{}
 	data.Set("strategy", "ticket")
 	data.Set("ticket", signInToken)
-	
+
 	// Create HTTP request
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, apiURL, strings.NewReader(data.Encode()))
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %w", err)
 	}
-	
+
 	// Set headers
 	req.Header.Set("Origin", "")
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -672,7 +672,7 @@ func CompleteSignInWithTicket(ctx context.Context, signInToken string) (string, 
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("request failed with status %d: %s", resp.StatusCode, string(body))
 	}
-	
+
 	// Parse response
 	var signInResponse signInResponse
 	if err := json.Unmarshal(body, &signInResponse); err != nil {
@@ -700,7 +700,7 @@ func CompleteSignInWithTicket(ctx context.Context, signInToken string) (string, 
 // signInResponse represents the response from Clerk's client sign-in API
 type signInResponse struct {
 	Response struct {
-		Status          string `json:"status"`
+		Status           string `json:"status"`
 		CreatedSessionID string `json:"created_session_id,omitempty"`
 	} `json:"response"`
 	Client struct {
@@ -718,7 +718,7 @@ type signInResponse struct {
 func GetUserInfo(ctx context.Context, sessionToken string) (*UserInfo, error) {
 	publishableKey := GetPublishableKey()
 	if publishableKey == "" {
-		return nil, fmt.Errorf("clerk publishable key not configured: set CLERK_PUBLISHABLE_KEY or use an official build from https://github.com/hookie-sh/hookie/releases")
+		return nil, fmt.Errorf("clerk publishable key not configured: set CLERK_PUBLISHABLE_KEY or use an official build from https://github.com/hookie-sh/cli/releases")
 	}
 
 	// Extract Clerk instance from publishable key
