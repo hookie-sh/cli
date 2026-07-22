@@ -25,20 +25,17 @@ service RelayService {
 }
 
 // Request to subscribe to events
-// Exactly one of app_id, source_id, or org_id must be provided:
-// - source_id: Subscribe to events for a specific source
-// - app_id: Subscribe to events for all sources in an application
-// - org_id: Subscribe to events for all applications and sources in an organization
+// Authenticated listen requires app_id (application public id) and machine_id.
+// Optional source_id is a source slug scoped to that application.
+// Anonymous listen uses source_id as the generated channel slug with x-channel-type: anonymous metadata.
 message SubscribeRequest {
-  // Application ID (optional, mutually exclusive with source_id and org_id)
+  // Application public id (required for authenticated listen)
   string app_id = 1;
   
-  // Source ID (optional, mutually exclusive with app_id and org_id)
-  // If provided, subscribes to events for this specific source
+  // Source slug within the application, or anonymous channel slug for anonymous listen
   string source_id = 2;
   
-  // Organization ID (optional, mutually exclusive with app_id and source_id)
-  // If provided, subscribes to events for all applications and sources in this organization
+  // Organization ID (optional; used by ListApplications, not subscribe scope)
   string org_id = 3;
   
   // Machine ID (required) - unique identifier for the client machine
@@ -77,10 +74,10 @@ message Event {
   // Timestamp (nanoseconds since epoch)
   int64 timestamp = 10;
   
-  // Application ID
+  // Application public id for authenticated events; empty for anonymous events
   string app_id = 11;
   
-  // Source ID
+  // Source slug for authenticated events, or anonymous channel slug
   string source_id = 12;
   
   // Event type: "webhook" for webhook events, "disconnect" for disconnect events

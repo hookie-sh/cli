@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/hookie-sh/cli/internal/publicid"
 	"gopkg.in/yaml.v3"
 )
 
@@ -93,6 +94,20 @@ func validateRepoConfig(config *RepoConfig) error {
 	// source_id (slug) requires app_id (public id)
 	if config.SourceID != "" && config.AppID == "" {
 		return fmt.Errorf("source_id requires app_id")
+	}
+	if config.AppID != "" && !publicid.ValidAppPublicID(config.AppID) {
+		return fmt.Errorf("app_id must be a valid application public id")
+	}
+	if config.SourceID != "" && !publicid.ValidSourceSlug(config.SourceID) {
+		return fmt.Errorf("source_id must be a valid source slug")
+	}
+
+	if config.Sources != nil {
+		for sourceSlug := range config.Sources {
+			if !publicid.ValidSourceSlug(sourceSlug) {
+				return fmt.Errorf("sources key %q must be a valid source slug", sourceSlug)
+			}
+		}
 	}
 
 	// Validate forward URL if provided

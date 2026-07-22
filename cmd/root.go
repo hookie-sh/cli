@@ -55,7 +55,7 @@ func Execute() {
 var listenCmd = &cobra.Command{
 	Use:   "listen [--forward-to <url>]",
 	Short: "Listen for webhook events (anonymous or authenticated)",
-	Long:  `Listen for webhook events. Without --app-id (and no app in hookie.yml), creates an anonymous ephemeral channel—even when logged in. Use --app-id to subscribe to all sources of an app, or add --source-id for a single source slug. Optionally forward events with --forward-to.`,
+	Long:  `Listen for webhook events. When authenticated without an application configured, prompts you to select an application and source. When logged out, creates an anonymous ephemeral channel. Use --app-id with an application public id to subscribe to all sources of an app, or add --source-id for a single source slug. Optionally forward events with --forward-to.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		forwardURL, _ := cmd.Flags().GetString("forward-to")
 		forwardExplicit := cmd.Flags().Changed("forward-to")
@@ -110,8 +110,8 @@ var listenCmd = &cobra.Command{
 		}
 
 		// source-id (slug) requires app-id (public id)
-		if sourceID != "" && appID == "" {
-			return fmt.Errorf("--source-id requires --app-id (application public id)")
+		if err := validateListenSelectors(appID, sourceID); err != nil {
+			return err
 		}
 
 		// Parse and validate endpoint URL if provided
@@ -137,6 +137,18 @@ var listenCmd = &cobra.Command{
 			return err
 		}
 
+		if authenticated && sourceID == "" && appID == "" {
+			client, err := relay.NewClient(cfg.Token, debug)
+			if err != nil {
+				return fmt.Errorf("failed to connect to relay: %w", relay.WrapRelayErr(err))
+			}
+			appID, sourceID, err = promptListenTarget(cmd.Context(), client, orgID)
+			client.Close()
+			if err != nil {
+				return err
+			}
+		}
+
 		// Start GUI when: no --forward-to, or --forward-to + --ui
 		var guiURL *url.URL
 		if showGUI {
@@ -158,16 +170,6 @@ var listenCmd = &cobra.Command{
 		if !authenticated {
 			return runAnonymousListen(endpointURL, guiURL, false)
 		}
-
-		if sourceID == "" && appID == "" {
-			return runAnonymousListen(endpointURL, guiURL, true)
-		}
-
-		client, err := relay.NewClient(cfg.Token, debug)
-		if err != nil {
-			return fmt.Errorf("failed to connect to relay: %w", relay.WrapRelayErr(err))
-		}
-		defer client.Close()
 
 		effectiveOrgID := orgID
 		if sourceID != "" {
@@ -247,7 +249,7 @@ func init() {
 	})
 	listenCmd.Flags().StringP("forward-to", "f", "", "Forward events to the specified endpoint URL")
 	listenCmd.Flags().Bool("ui", false, "Show local UI when forwarding with --forward-to")
-	listenCmd.Flags().StringP("source-id", "s", "", "Subscribe to a specific source")
-	listenCmd.Flags().StringP("app-id", "a", "", "Subscribe to all sources of an application")
+	listenCmd.Flags().StringP("source-id", "s", "", "Subscribe to a specific source slug (requires --app-id)")
+	listenCmd.Flags().StringP("app-id", "a", "", "Subscribe to all sources of an application public id")
 	rootCmd.AddCommand(listenCmd)
 }

@@ -24,13 +24,13 @@ var loginCmd = &cobra.Command{
 		// Get publishable key (from env, .env, or build-injected)
 		publishableKey := auth.GetPublishableKey()
 		if publishableKey == "" {
-			return fmt.Errorf("clerk publishable key not configured. set CLERK_PUBLISHABLE_KEY or use an official build from https://github.com/hookie-sh/hookie/releases")
+			return fmt.Errorf("clerk publishable key not configured. set CLERK_PUBLISHABLE_KEY or use an official build from https://github.com/hookie-sh/cli/releases")
 		}
 
 		// Get web app URL
 		webAppURL := auth.GetWebAppURL()
 		if webAppURL == "" {
-			return fmt.Errorf("web app URL not configured. set HOOKIE_APP_URL or use an official build from https://github.com/hookie-sh/hookie/releases")
+			return fmt.Errorf("web app URL not configured. set HOOKIE_APP_URL or use an official build from https://github.com/hookie-sh/cli/releases")
 		}
 
 		// Step 1: Find an available port for the callback server
@@ -116,47 +116,46 @@ var loginCmd = &cobra.Command{
 			return fmt.Errorf("authorization timeout")
 		}
 
-	// Step 6: Verify token
-	fmt.Println("Verifying token...")
-	_, err = auth.VerifyToken(ctx, token)
-	if err != nil {
-		return fmt.Errorf("failed to verify token: %w", err)
-	}
-
-	// Step 7: Extract user name and email from token claims
-	userInfo, err := auth.GetUserInfoFromToken(ctx, token)
-	if err != nil || userInfo == nil || userInfo.Name == "" {
-		// If name not in token, try API call as fallback
-		userInfo, _ = auth.GetUserInfo(ctx, token)
-	}
-
-	// Step 8: Save token to config (load existing config first to preserve RelayURL, MachineID)
-	cfg, err := config.Load()
-	if err != nil {
-		return fmt.Errorf("failed to load config: %w", err)
-	}
-	cfg.Token = token
-
-	if err := config.Save(cfg); err != nil {
-		return fmt.Errorf("failed to save config: %w", err)
-	}
-
-	fmt.Println("✓ Authentication successful!")
-	if userInfo != nil && userInfo.Name != "" {
-		displayName := color.YellowString(userInfo.Name)
-		if userInfo.Email != "" {
-			fmt.Printf("✓ Successfully logged in as %s (%s)\n", displayName, userInfo.Email)
-		} else {
-			fmt.Printf("✓ Successfully logged in as %s\n", displayName)
+		// Step 6: Verify token
+		fmt.Println("Verifying token...")
+		_, err = auth.VerifyToken(ctx, token)
+		if err != nil {
+			return fmt.Errorf("failed to verify token: %w", err)
 		}
-	} else {
-		fmt.Println("✓ Successfully logged in")
-	}
-	return nil
+
+		// Step 7: Extract user name and email from token claims
+		userInfo, err := auth.GetUserInfoFromToken(ctx, token)
+		if err != nil || userInfo == nil || userInfo.Name == "" {
+			// If name not in token, try API call as fallback
+			userInfo, _ = auth.GetUserInfo(ctx, token)
+		}
+
+		// Step 8: Save token to config (load existing config first to preserve RelayURL, MachineID)
+		cfg, err := config.Load()
+		if err != nil {
+			return fmt.Errorf("failed to load config: %w", err)
+		}
+		cfg.Token = token
+
+		if err := config.Save(cfg); err != nil {
+			return fmt.Errorf("failed to save config: %w", err)
+		}
+
+		fmt.Println("✓ Authentication successful!")
+		if userInfo != nil && userInfo.Name != "" {
+			displayName := color.YellowString(userInfo.Name)
+			if userInfo.Email != "" {
+				fmt.Printf("✓ Successfully logged in as %s (%s)\n", displayName, userInfo.Email)
+			} else {
+				fmt.Printf("✓ Successfully logged in as %s\n", displayName)
+			}
+		} else {
+			fmt.Println("✓ Successfully logged in")
+		}
+		return nil
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(loginCmd)
 }
-
